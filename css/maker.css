@@ -4,7 +4,6 @@ body {
     padding: 0 15px;
 }
 ul { margin: 0; }
-input[type="button"] { width: 150px; }
 #fields { font-style: italic; font-size: 9pt; }
 #instructions { margin-bottom: 5px; }
 #instructionsContent { display: block; }
