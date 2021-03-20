@@ -19,7 +19,8 @@ FBMaker = {
     "Type medewerker",
     "Teams",
     "Aanspreekpunt",
-    "Functie"
+    "Functie",
+    "Geheime_functie"
   ],
 
 
@@ -29,13 +30,13 @@ FBMaker = {
   output: "",
   teamsOrdered: [],
 
-  make: function() {
+  make: function () {
     var self = this;
 
     // Save team ordering
     localStorage.setItem("teamsOrdered", JSON.stringify(FBMaker.teamsOrdered || []));
 
-    this.getAndProcessData(function(err, data) {
+    this.getAndProcessData(function (err, data) {
       if (err) { return self.dataError(err); }
 
       self.output = "";
@@ -52,7 +53,7 @@ FBMaker = {
       iFrameDoc.write(self.output);
       iFrameDoc.close();
 
-      setTimeout(function() {
+      setTimeout(function () {
         iFrame.height = (iFrameDoc.body.scrollHeight + 50).toFixed() + "px";
       }, 500);
 
@@ -62,52 +63,52 @@ FBMaker = {
     });
   },
 
-  addHeader: function() {
+  addHeader: function () {
     this.output += '<!DOCTYPE html>\n' +
-           '<html lang="nl">\n' +
-           '<head>\n' +
-           '<title>Leussinkbad Smoelenboek</title>\n' +
-           '<meta charset="utf-8">\n' +
-           '<meta http-equiv="content-type" content="text/html;charset=utf-8" />\n' +
-           '<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />\n' +
-           '<link rel="stylesheet" href="css/paper.css">\n' +
-           '<link rel="stylesheet" type="text/css" href="css/smoelenboek.css" />\n' +
-           '<style>@page { size: A4 }</style>' +
-           '</head>\n' +
-           '<body class="A4">';
+      '<html lang="nl">\n' +
+      '<head>\n' +
+      '<title>Leussinkbad Smoelenboek</title>\n' +
+      '<meta charset="utf-8">\n' +
+      '<meta http-equiv="content-type" content="text/html;charset=utf-8" />\n' +
+      '<link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Open+Sans" />\n' +
+      '<link rel="stylesheet" href="css/paper.css">\n' +
+      '<link rel="stylesheet" type="text/css" href="css/smoelenboek.css" />\n' +
+      '<style>@page { size: A4 }</style>' +
+      '</head>\n' +
+      '<body class="A4'+($("input[name=isForProspectives").prop("checked") ? " isForProspectives" : "")+'">';
   },
 
-  addFooter: function() {
+  addFooter: function () {
     this.output += '' +
       '<script src="js/photoResizer.js"></script>' +
       '</body></html>';
   },
 
-  openPage: function() {
+  openPage: function () {
     this.output += '<section class="sheet padding-7mm"><div class="peoplePage">';
   },
 
-  closePage: function() {
-    this.output +=  '</div></section>';
+  closePage: function () {
+    this.output += '</div></section>';
   },
 
-  addCoverPage: function() {
+  addCoverPage: function () {
     this.output += window.coverPage || "";
   },
 
-  addInfoPage: function() {
+  addInfoPage: function () {
     this.output += window.infoPage || "";
   },
 
-  openTeam: function(team) {
+  openTeam: function (team) {
     this.output += '<div class="team" data-team="' + team + '">';
   },
 
-  closeTeam: function() {
-    this.output +=  '<span class="clearfix"></span></div>';
+  closeTeam: function () {
+    this.output += '<span class="clearfix"></span></div>';
   },
 
-  addPeople: function(data) {
+  addPeople: function (data) {
     var self = this,
       pageOpen = false,
       teamOpen = false,
@@ -118,11 +119,11 @@ FBMaker = {
       colCount = 0;
 
     // Go through teams
-    self.teamsOrdered.forEach(function(team) {
+    self.teamsOrdered.forEach(function (team) {
       var people = self.sortTeam(team, data[team]);
 
       // Go through people in team
-      people.forEach(function(p) {
+      people.forEach(function (p) {
 
         // Close what needs to be closed
         if (colCount >= 3) { colCount = 0; bumpTeamcount = true; }
@@ -147,28 +148,29 @@ FBMaker = {
     if (pageOpen) self.closePage();
   },
 
-  makePerson: function(team, p) {
+  makePerson: function (team, p) {
     var teamLead = p.Aanspreekpunt.indexOf(team) > -1;
+    const isForProspectives = $("input[name=isForProspectives]").prop("checked");
+    console.log(isForProspectives);
 
     return $("<div>").append(
-        $("<div>")
+      $("<div>")
         .addClass("person" + (teamLead ? " teamlead" : ""))
         .append(
           $("<div>")
             .addClass("photo")
             .append(
-              $("<canvas>")
-                .attr("data-src-backup", FBMaker.photoPath + "_noface.jpg")
-                .attr("data-src", FBMaker.photoPath + p.photo)
+              $("<img>")
+                .attr("src", FBMaker.photoPath + p.photo)
             )
         )
         .append(
           $("<div>")
             .addClass("info")
-            .append($("<div>").addClass("naam").html(p.Voornaam + " " + p.Achternaam))
+            .append($("<div>").addClass("naam").html(p.Voornaam + "<span class='achternaam'> " + p.Achternaam + "</span>"))
             .append($("<div>").addClass("telefoon").html(p.Telefoon && ("T: " + p.Telefoon.replace(/[- ]/, "")) || " "))
             .append($("<div>").addClass("email").html(p.Email && ("E: " + p.Email) || " "))
-            .append($("<div>").addClass("functie").html(p.Functie))
+            .append($("<div>").addClass("functie").html(p.Functie+" <span class='geheime_functie'>"+p.Geheime_functie+"</span>"))
         )
     );
   },
@@ -176,7 +178,7 @@ FBMaker = {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Data handling
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  getAndProcessData: function(cb) {
+  getAndProcessData: function (cb) {
     // Collect input from textbox
     var data = $("#personeelInput").val();
     if (!data) return cb([]);
@@ -188,14 +190,14 @@ FBMaker = {
     cb(null, data[1]);
   },
 
-  makeStructuredData: function(data) {
+  makeStructuredData: function (data) {
     var self = this;
     data = data.split("\n");
     if (!data) return null;
     var teams = {},
       errors = [];
 
-    data.forEach(function(personRaw) {
+    data.forEach(function (personRaw) {
       if (!personRaw) return;
       var person = personRaw.split("\t");
       if (person.length < 2) return; // Skip
@@ -207,31 +209,31 @@ FBMaker = {
 
       // Check teams
       if (personO.Teams) {
-        personO.Teams.forEach(function(team) {
+        personO.Teams.forEach(function (team) {
           if (teams[team] === undefined) { teams[team] = []; }
           teams[team].push(personO);
         });
       }
     });
 
-    return [ errors, teams ];
+    return [errors, teams];
   },
 
-  personArrayToObject: function(p) {
+  personArrayToObject: function (p) {
     var out = {};
-    p.forEach(function(f, index) {
+    p.forEach(function (f, index) {
       out[FBMaker.fieldMapping[index]] = f;
     });
     out.photo = makePhotoFileName(out);
-    out.Aanspreekpunt = out.Aanspreekpunt.replace(";",",").split(",");
-    out.Teams= out.Teams.replace(";",",").split(",");
+    out.Aanspreekpunt = out.Aanspreekpunt.replace(";", ",").split(",");
+    out.Teams = out.Teams.replace(";", ",").split(",");
     return out;
   },
 
-  sortTeam: function(teamName, people) {
-    return people.sort(function(a, b) {
+  sortTeam: function (teamName, people) {
+    return people.sort(function (a, b) {
       var aLead = a.Aanspreekpunt && a.Aanspreekpunt.indexOf(teamName) > -1,
-          bLead = b.Aanspreekpunt && b.Aanspreekpunt.indexOf(teamName) > -1,
+        bLead = b.Aanspreekpunt && b.Aanspreekpunt.indexOf(teamName) > -1,
         aName = a.Voornaam + ' ' + a.Achternaam,
         bName = b.Voornaam + ' ' + b.Achternaam;
       if (aLead === bLead && aName === bName) return 0;
@@ -240,10 +242,10 @@ FBMaker = {
     });
   },
 
-  makeTeams: function() {
+  makeTeams: function () {
     // Updates list of teams
     var self = this;
-    this.getAndProcessData(function(err, data) {
+    this.getAndProcessData(function (err, data) {
       var c = $("#teams").html(""); // set and empty
       if (err || !data) return; // Ignore errors
 
@@ -255,7 +257,7 @@ FBMaker = {
 
       teams = null; data = null; // Clear mem
 
-      self.teamsOrdered.forEach(function(team) {
+      self.teamsOrdered.forEach(function (team) {
         c.append($("<li>").addClass("list-group-item").text(team));
       });
 
@@ -263,7 +265,7 @@ FBMaker = {
       if (self.teamsOrdered.length) {
         c
           .sortable('destroy')
-          .sortable({placeholderClass: 'list-group-item'})
+          .sortable({ placeholderClass: 'list-group-item' })
           .on('sortupdate', FBMaker.teamsSorted.bind(FBMaker));
 
         $("#saveSort").show();
@@ -273,12 +275,12 @@ FBMaker = {
     });
   },
 
-  teamsSorted: function() {
+  teamsSorted: function () {
     // Store sorting in object and save for later
-    this.teamsOrdered = $("#teams li").map(function() { return this.innerHTML; }).get();
+    this.teamsOrdered = $("#teams li").map(function () { return this.innerHTML; }).get();
   },
 
-  dataError: function(errors) {
+  dataError: function (errors) {
     if (typeof errors === "undefined" || errors.length < 1) {
       alert("Onjuiste data ingevoerd");
     } else {
@@ -286,19 +288,19 @@ FBMaker = {
     }
   },
 
-  print: function() {
+  print: function () {
     $("iframe")[0].contentWindow.print();
   }
 };
 
-$(function() {
+$(function () {
 
   // Init buttons etc
   $("#generateBut").click(FBMaker.make.bind(FBMaker));
   $("#printOutput").click(FBMaker.print.bind(FBMaker));
 
   // Show fields from mapping in instructions
-  $("#fields").html( FBMaker.fieldMapping.join(", ") );
+  $("#fields").html(FBMaker.fieldMapping.join(", "));
 
   // Update teams when changing members
   $("#personeelInput").on("input", FBMaker.makeTeams.bind(FBMaker)).trigger('input');
@@ -310,10 +312,16 @@ $(function() {
     FBMaker.teamsOrdered = [];
   }
 
-  var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
-  if (!isChrome) {
-    alert("LET OP! Leussinkbad smoelenboek werkt ALLEEN in Google Chrome!");
-  }
+  // Show/hide information when (un)checking "Aspirant leden-versie"
+  $("input[name=isForProspectives").change(function() {
+    const pdfBody = $("iframe")[0].contentDocument.body;
+    if ( $(this).prop("checked") ) {
+      pdfBody.classList.add("isForProspectives");
+    }
+    else {
+      pdfBody.classList.remove("isForProspectives")
+    }
+  });
 });
 
 function makePhotoFileName(person) {

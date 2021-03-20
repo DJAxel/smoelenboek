@@ -83,4 +83,16 @@ section.coverPage canvas {
 .email { height: 36px; word-break: break-all; }
 
 .photo { width: 100%; height: 206px; }
-.photo canvas { width: 100%; height: 100%; }
+.photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.isForProspectives .telefoon,
+.isForProspectives .email,
+.isForProspectives .achternaam,
+.isForProspectives .geheime_functie
+{
+    display: none;
+}
